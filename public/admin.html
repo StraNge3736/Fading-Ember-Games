@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0b10">
+  <title>Studio Desk — Fading Ember Games</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/admin.css">
+  <script src="/admin.js" defer></script>
+</head>
+<body class="admin-body">
+  <div class="login-screen" id="login-view">
+    <a class="admin-back" href="/">← Back to the client site</a>
+    <div class="login-card">
+      <div class="login-logo"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M20 3C20 3 9 16 9 24a11 11 0 0 0 22 0C31 16 20 3 20 3Z" fill="currentColor"/><path d="M20 12s-5 7-5 12a5 5 0 0 0 10 0c0-5-5-12-5-12Z" fill="#ffdfa0"/></svg></span><span>Fading Ember<br><b>Studio Desk</b></span></div>
+      <p class="login-eyebrow">A quiet place to make good work</p>
+      <h1>Welcome <em>back.</em></h1>
+      <p class="login-intro">Sign in to keep your portfolio fresh and stay close to new project inquiries.</p>
+      <form id="login-form">
+        <label for="login-username">Admin username</label><input id="login-username" name="username" type="text" autocomplete="username" minlength="3" maxlength="40" pattern="[A-Za-z0-9._-]+" placeholder="Enter your studio username" required>
+        <label for="login-password">Studio password</label>
+        <div class="password-wrap"><input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required><button type="button" id="password-toggle" aria-label="Show password">Show</button></div>
+        <a class="admin-forgot-link" href="/forgot-password?role=admin">Forgot your password?</a>
+        <button class="admin-button primary login-submit" type="submit">Enter the studio <span aria-hidden="true">↗</span></button>
+        <p class="login-feedback" id="login-feedback" role="status" aria-live="polite"></p>
+      </form>
+      <p class="login-foot">Studio access is limited to the verified admin identity configured in the private server <code>.env</code> file. Admin accounts cannot be created from this page.</p>
+    </div>
+    <span class="login-corner-note">FEG &nbsp; / &nbsp; INTERNAL</span>
+  </div>
+
+  <div class="admin-layout hidden" id="dashboard-view">
+    <aside class="sidebar">
+      <a class="sidebar-brand" href="/"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M20 3C20 3 9 16 9 24a11 11 0 0 0 22 0C31 16 20 3 20 3Z" fill="currentColor"/><path d="M20 12s-5 7-5 12a5 5 0 0 0 10 0c0-5-5-12-5-12Z" fill="#ffdfa0"/></svg></span><span>Fading Ember<small>STUDIO DESK</small></span></a>
+      <p class="sidebar-label">WORKSPACE</p>
+      <nav class="side-nav" aria-label="Studio navigation">
+        <button class="side-link active" data-view="overview"><span class="side-icon">◫</span>Overview</button>
+        <button class="side-link" data-view="projects"><span class="side-icon">✳</span>Projects <span class="side-count" id="nav-project-count">0</span></button>
+        <button class="side-link" data-view="inquiries"><span class="side-icon">↗</span>Inquiries <span class="side-count warm" id="nav-inquiry-count">0</span></button>
+      </nav>
+      <div class="sidebar-spacer"></div>
+      <div class="sidebar-tip"><span>✦</span><p><b>A little reminder</b><br>Good work deserves a good story. Keep your project notes clear and human.</p></div>
+      <div class="sidebar-user"><div class="user-avatar">F</div><span><b>Studio team</b><small>Fading Ember Games</small></span><button id="logout-button" title="Sign out" aria-label="Sign out">↗</button></div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar"><div class="breadcrumb"><span>Fading Ember</span><span class="crumb-slash">/</span><b id="breadcrumb-current">Overview</b></div><div class="topbar-actions"><a class="view-site-link" href="/" target="_blank" rel="noopener">View client site <span>↗</span></a><button class="topbar-logout" id="topbar-logout" type="button">Sign out</button><span class="topbar-separator"></span><span class="current-date" id="current-date"></span><span class="topbar-avatar">F</span></div></header>
+      <div class="admin-content">
+        <section class="admin-view active" id="view-overview">
+          <div class="view-title-row"><div><p class="admin-eyebrow">YOUR STUDIO, AT A GLANCE</p><h1>Good morning, <em>team.</em></h1><p class="view-subtitle">Here’s what’s happening around the studio today.</p></div><button class="admin-button primary" data-action="new-project">+ &nbsp; Add a project</button></div>
+          <div class="stat-grid"><article class="stat-card"><div class="stat-label">Published projects <span class="stat-mark orange">↗</span></div><div class="stat-value" id="stat-published">0</div><div class="stat-foot"><span class="stat-dot"></span>Visible on your client site</div></article><article class="stat-card"><div class="stat-label">Portfolio drafts <span class="stat-mark">✎</span></div><div class="stat-value" id="stat-drafts">0</div><div class="stat-foot">Work waiting in the wings</div></article><article class="stat-card"><div class="stat-label">New inquiries <span class="stat-mark gold">✦</span></div><div class="stat-value" id="stat-new-inquiries">0</div><div class="stat-foot">A fresh chance to make something</div></article></div>
+          <div class="overview-grid"><section class="content-panel"><div class="panel-heading"><div><p class="admin-eyebrow">RECENTLY UPDATED</p><h2>Portfolio</h2></div><button class="plain-link" data-view="projects">All projects <span>↗</span></button></div><div class="compact-project-list" id="recent-projects"></div></section><section class="content-panel"><div class="panel-heading"><div><p class="admin-eyebrow">IN YOUR INBOX</p><h2>New inquiries</h2></div><button class="plain-link" data-view="inquiries">View all <span>↗</span></button></div><div class="compact-inquiry-list" id="recent-inquiries"></div></section></div>
+          <div class="admin-note"><span>✳</span><p><b>Your portfolio is a living thing.</b> Make a small update whenever a new piece of work finds its way home.</p><a href="/" target="_blank" rel="noopener">See how it looks <span>↗</span></a></div>
+        </section>
+
+        <section class="admin-view" id="view-projects">
+          <div class="view-title-row"><div><p class="admin-eyebrow">YOUR STUDIO’S BEST STORIES</p><h1>The <em>portfolio.</em></h1><p class="view-subtitle">Add the work you love. Publish it when it’s ready to be seen.</p></div><button class="admin-button primary" data-action="new-project">+ &nbsp; Add a project</button></div>
+          <div class="list-toolbar"><span id="project-summary">0 projects</span><select id="project-filter" aria-label="Filter projects"><option value="All">All projects</option><option value="Published">Published</option><option value="Draft">Drafts</option></select></div>
+          <div class="admin-project-list" id="admin-project-list"></div>
+        </section>
+
+        <section class="admin-view" id="view-inquiries">
+          <div class="view-title-row"><div><p class="admin-eyebrow">A CONVERSATION STARTS HERE</p><h1>Project <em>inquiries.</em></h1><p class="view-subtitle">Notes from people ready to make something good with you.</p></div><div class="inquiry-total"><b id="inquiry-total-count">0</b><span>all inquiries</span></div></div>
+          <div class="list-toolbar"><span id="inquiry-summary">Your studio inbox</span><select id="inquiry-filter" aria-label="Filter inquiries"><option value="All">All inquiries</option><option value="New">New</option><option value="In progress">In progress</option><option value="Maintenance">Maintenance</option><option value="Closed">Closed</option></select></div>
+          <div class="admin-inquiry-list" id="admin-inquiry-list"></div>
+        </section>
+      </div>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    </main>
+  </div>
+
+  <dialog class="project-dialog" id="project-dialog">
+    <form id="project-form" class="project-form">
+      <div class="dialog-heading"><div><p class="admin-eyebrow">PORTFOLIO DETAILS</p><h2 id="dialog-title">Add a <em>project.</em></h2></div><button class="dialog-close" type="button" id="dialog-close" aria-label="Close">×</button></div>
+      <input type="hidden" name="id" id="project-id">
+      <label>Project name *<input name="title" maxlength="90" placeholder="Give this work a name" required></label>
+      <div class="dialog-row"><label>Service category *<select name="category" required><option value="" disabled selected>Choose a category</option><option>Web Development</option><option>Graphic Design</option><option>Video Editing</option><option>Game Art</option><option>Animation</option><option>Other</option></select></label><label>Year<input name="year" inputmode="numeric" maxlength="4" placeholder="2026"></label></div>
+      <label>Project story *<textarea name="description" rows="3" maxlength="600" placeholder="A short note about the work, the idea, or the result…" required></textarea></label>
+      <label>Project URL * <span class="label-hint">Paste the exact live page, repository, or project link</span><input name="projectUrl" type="url" maxlength="500" placeholder="https://example.com/project" required></label>
+      <label>Tags <span class="label-hint">Optional · separate with commas</span><input name="tags" maxlength="120" placeholder="Identity, Campaign, Motion"></label>
+      <label>Visibility<select name="status"><option>Published</option><option>Draft</option></select></label>
+      <div class="dialog-actions"><button class="admin-button subtle" type="button" id="dialog-cancel">Cancel</button><button class="admin-button primary" type="submit" id="project-save">Save project <span>↗</span></button></div>
+      <p class="dialog-feedback" id="project-feedback" role="status"></p>
+    </form>
+  </dialog>
+
+  <dialog class="project-dialog reply-dialog" id="reply-dialog">
+    <form id="reply-form" class="project-form">
+      <div class="dialog-heading"><div><p class="admin-eyebrow">STUDIO EMAIL</p><h2>Write a <em>reply.</em></h2></div><button class="dialog-close" type="button" id="reply-close" aria-label="Close email composer">×</button></div>
+      <p class="reply-recipient" id="reply-recipient"></p>
+      <label>Subject *<input name="subject" maxlength="140" required></label>
+      <label>Your message *<textarea name="message" rows="7" maxlength="4000" placeholder="Write your reply…" required></textarea></label>
+      <div class="dialog-actions"><button class="admin-button subtle" type="button" id="reply-cancel">Cancel</button><button class="admin-button primary" type="submit">Send email <span>↗</span></button></div>
+      <p class="dialog-feedback" id="reply-feedback" role="status" aria-live="polite"></p>
+    </form>
+  </dialog>
+</body>
+</html>

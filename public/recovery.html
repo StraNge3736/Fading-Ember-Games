@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0b10">
+  <title>Password recovery — Fading Ember Games</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/recovery.css">
+  <script src="/recovery.js" defer></script>
+</head>
+<body>
+  <main class="recovery-screen">
+    <a class="back-link" id="back-link" href="/">← Back to sign in</a>
+    <section class="recovery-card">
+      <a class="brand" href="/" aria-label="Fading Ember Games home"><span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M20 3C20 3 9 16 9 24a11 11 0 0 0 22 0C31 16 20 3 20 3Z" fill="currentColor"/><path d="M20 12s-5 7-5 12a5 5 0 0 0 10 0c0-5-5-12-5-12Z" fill="#ffdfa0"/></svg></span><span>Fading Ember<br><b>Games</b></span></a>
+      <p class="eyebrow" id="recovery-eyebrow">ACCOUNT RECOVERY</p>
+      <h1 id="recovery-title">Forgot your <em>password?</em></h1>
+      <p class="intro" id="recovery-intro">Enter the email address for your account and we’ll send you a one-time reset link.</p>
+
+      <form id="forgot-form">
+        <label for="recovery-email">Account email</label>
+        <input id="recovery-email" name="email" type="email" autocomplete="email" maxlength="160" placeholder="you@example.com" required>
+        <button class="primary-button" type="submit">Get a reset link <span aria-hidden="true">↗</span></button>
+      </form>
+
+      <form id="reset-form" hidden>
+        <label for="new-password">New password</label>
+        <input id="new-password" name="password" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="At least 10 characters" required>
+        <label for="confirm-password">Confirm new password</label>
+        <input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="Enter it again" required>
+        <button class="primary-button" type="submit">Update password <span aria-hidden="true">↗</span></button>
+      </form>
+
+      <p class="feedback" id="recovery-feedback" role="status" aria-live="polite"></p>
+      <a class="back-link card-back" id="card-back-link" href="/">Return to sign in</a>
+      <p class="local-note" id="local-note">The link expires after 60 minutes. Check your inbox and spam folder.</p>
+    </section>
+    <span class="corner-note">FEG &nbsp; / &nbsp; ACCOUNT ACCESS</span>
+  </main>
+</body>
+</html>
