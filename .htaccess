@@ -1,0 +1,22 @@
+Options -Indexes
+RewriteEngine On
+
+# Keep application data and development-only folders out of the web root.
+RewriteRule ^(?:data|work|node_modules|vendor|\.git)(?:/|$) - [F,L,NC]
+RewriteRule ^(?:server\.js|package(?:-lock)?\.json|(?:README|HOSTINGER-DEPLOY)\.md)$ - [F,L,NC]
+RewriteRule ^tools(?:/|$) - [F,L,NC]
+
+# All application endpoints run through the PHP API router.
+RewriteRule ^api(?:/.*)?$ api.php [QSA,L]
+
+# Public pages and assets live in public/ and keep their root-relative URLs.
+RewriteRule ^admin/?$ public/admin.html [L]
+RewriteRule ^(?:forgot-password|reset-password)/?$ public/recovery.html [L]
+RewriteCond %{REQUEST_URI} !^/public/
+RewriteCond %{DOCUMENT_ROOT}/public%{REQUEST_URI} -f
+RewriteRule ^(.+)$ public/$1 [L]
+RewriteRule ^$ public/index.html [L]
+
+<FilesMatch "^(\.env|\.env\..*|.*\.(sql|sqlite|log))$">
+  Require all denied
+</FilesMatch>
