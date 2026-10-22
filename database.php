@@ -19,6 +19,8 @@ function ensure_schema(PDO $pdo): void
             'CREATE TABLE IF NOT EXISTS inquiries (id TEXT PRIMARY KEY, user_id TEXT NULL, name TEXT NOT NULL, email TEXT NOT NULL, service TEXT NOT NULL, budget TEXT NOT NULL, details TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL)',
             'CREATE TABLE IF NOT EXISTS password_resets (id INTEGER PRIMARY KEY AUTOINCREMENT, token_hash TEXT NOT NULL UNIQUE, role TEXT NOT NULL, account_id TEXT NOT NULL, expires_at INTEGER NOT NULL, created_at INTEGER NOT NULL)',
             'CREATE INDEX IF NOT EXISTS idx_password_resets_account ON password_resets (role, account_id)',
+            'CREATE TABLE IF NOT EXISTS login_attempts (bucket_hash TEXT PRIMARY KEY, window_started INTEGER NOT NULL, attempts INTEGER NOT NULL)',
+            'CREATE INDEX IF NOT EXISTS idx_login_attempts_window ON login_attempts (window_started)',
             'CREATE INDEX IF NOT EXISTS idx_projects_publication ON projects (status, created_at)',
             'CREATE INDEX IF NOT EXISTS idx_inquiries_created ON inquiries (created_at)',
             'CREATE TABLE IF NOT EXISTS recovery_limits (ip_hash TEXT PRIMARY KEY, window_started INTEGER NOT NULL, attempts INTEGER NOT NULL)',
@@ -30,6 +32,7 @@ function ensure_schema(PDO $pdo): void
             'CREATE TABLE IF NOT EXISTS projects (id VARCHAR(64) PRIMARY KEY, title VARCHAR(90) NOT NULL, category VARCHAR(40) NOT NULL, year CHAR(4) NOT NULL, description VARCHAR(600) NOT NULL, project_url VARCHAR(500) NOT NULL, tags_json TEXT NOT NULL, status VARCHAR(20) NOT NULL, created_at VARCHAR(35) NOT NULL, INDEX idx_projects_publication (status, created_at)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
             'CREATE TABLE IF NOT EXISTS inquiries (id VARCHAR(64) PRIMARY KEY, user_id VARCHAR(36) NULL, name VARCHAR(100) NOT NULL, email VARCHAR(160) NOT NULL, service VARCHAR(60) NOT NULL, budget VARCHAR(60) NOT NULL, details VARCHAR(1800) NOT NULL, status VARCHAR(20) NOT NULL, created_at VARCHAR(35) NOT NULL, INDEX idx_inquiries_created (created_at), CONSTRAINT fk_inquiries_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
             'CREATE TABLE IF NOT EXISTS password_resets (id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY, token_hash CHAR(64) NOT NULL UNIQUE, role VARCHAR(10) NOT NULL, account_id VARCHAR(36) NOT NULL, expires_at BIGINT UNSIGNED NOT NULL, created_at BIGINT UNSIGNED NOT NULL, INDEX idx_password_resets_account (role, account_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
+            'CREATE TABLE IF NOT EXISTS login_attempts (bucket_hash CHAR(64) PRIMARY KEY, window_started BIGINT UNSIGNED NOT NULL, attempts INT UNSIGNED NOT NULL, INDEX idx_login_attempts_window (window_started)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
             'CREATE TABLE IF NOT EXISTS recovery_limits (ip_hash CHAR(64) PRIMARY KEY, window_started BIGINT UNSIGNED NOT NULL, attempts INT UNSIGNED NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
         ];
     }

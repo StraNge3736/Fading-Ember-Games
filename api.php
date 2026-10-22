@@ -5,6 +5,8 @@ require_once __DIR__ . '/database.php';
 
 const SESSION_TTL = 43200;
 const RESET_TTL = 3600;
+const LOGIN_ATTEMPT_LIMIT = 5;
+const LOGIN_ATTEMPT_WINDOW = 900;
 
 function send_json(int $status, array $body, array $headers = []): never
 {
@@ -413,6 +415,76 @@ function recovery_rate_limited(PDO $pdo): bool
     return (int)$stmt->fetchColumn() > 5;
 }
 
+function login_attempt_bucket(string $role, string $identifier): string
+{
+    $address = trim((string)($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
+    $identity = strtolower(trim($identifier));
+    return hash_hmac('sha256', $role . "\0" . $identity . "\0" . $address, app_setting('APP_SECRET', __FILE__));
+}
+
+/** Reserve one of five login attempts for this role, identifier, and source IP. */
+function login_attempt_retry_after(PDO $pdo, string $role, string $identifier): ?int
+{
+    $now = time();
+    $bucket = login_attempt_bucket($role, $identifier);
+    $sqlite = $pdo->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite';
+
+    // Expired buckets are discarded opportunistically to keep the table small.
+    if (random_int(1, 100) === 1) {
+        $stmt = $pdo->prepare('DELETE FROM login_attempts WHERE window_started < :cutoff');
+        $stmt->execute(['cutoff' => $now - 86400]);
+    }
+
+    $insert = $sqlite
+        ? 'INSERT OR IGNORE INTO login_attempts (bucket_hash, window_started, attempts) VALUES (:bucket, :started, 0)'
+        : 'INSERT IGNORE INTO login_attempts (bucket_hash, window_started, attempts) VALUES (:bucket, :started, 0)';
+    $stmt = $pdo->prepare($insert);
+    $stmt->execute(['bucket' => $bucket, 'started' => $now]);
+
+    // Serialize reservations so parallel requests cannot all pass the fifth-attempt check.
+    if ($sqlite) {
+        $pdo->exec('BEGIN IMMEDIATE TRANSACTION');
+    } else {
+        $pdo->beginTransaction();
+    }
+
+    try {
+        $sql = 'SELECT window_started, attempts FROM login_attempts WHERE bucket_hash = :bucket';
+        if (!$sqlite) {
+            $sql .= ' FOR UPDATE';
+        }
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute(['bucket' => $bucket]);
+        $row = $stmt->fetch();
+
+        if (!$row || (int)$row['window_started'] <= $now - LOGIN_ATTEMPT_WINDOW) {
+            $stmt = $pdo->prepare('UPDATE login_attempts SET window_started = :started, attempts = 1 WHERE bucket_hash = :bucket');
+            $stmt->execute(['started' => $now, 'bucket' => $bucket]);
+            $retryAfter = null;
+        } elseif ((int)$row['attempts'] >= LOGIN_ATTEMPT_LIMIT) {
+            $retryAfter = max(1, (int)$row['window_started'] + LOGIN_ATTEMPT_WINDOW - $now);
+        } else {
+            $stmt = $pdo->prepare('UPDATE login_attempts SET attempts = attempts + 1 WHERE bucket_hash = :bucket');
+            $stmt->execute(['bucket' => $bucket]);
+            $retryAfter = null;
+        }
+
+        $pdo->commit();
+        return $retryAfter;
+    } catch (Throwable $error) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $error;
+    }
+}
+
+function clear_login_attempts(PDO $pdo, string $role, string $identifier): void
+{
+    $stmt = $pdo->prepare('DELETE FROM login_attempts WHERE bucket_hash = :bucket');
+    $stmt->execute(['bucket' => login_attempt_bucket($role, $identifier)]);
+}
+
 function validate_project(array $body): array
 {
     $title = text_value($body['title'] ?? '', 90);
@@ -618,12 +690,17 @@ function run_api(): never
             $body = request_json();
             $email = strtolower(text_value($body['email'] ?? '', 160));
             $password = (string)($body['password'] ?? '');
+            $retryAfter = login_attempt_retry_after($pdo, 'client', $email);
+            if ($retryAfter !== null) {
+                send_json(429, ['error' => 'Too many sign-in attempts. Please wait before trying again.'], ['Retry-After' => (string)$retryAfter]);
+            }
             $stmt = $pdo->prepare('SELECT * FROM users WHERE email = :email');
             $stmt->execute(['email' => $email]);
             $user = $stmt->fetch();
             if (!$user || password_length($password) > 128 || !verify_password($password, $user['password_hash'])) {
                 send_json(401, ['error' => 'Email or password did not match.']);
             }
+            clear_login_attempts($pdo, 'client', $email);
             create_role_session('client', (string)$user['id'], (int)$user['session_version']);
             $signedInAt = now_iso();
             $emailSent = event_emails([
@@ -675,6 +752,11 @@ function run_api(): never
             $body = request_json();
             $username = strtolower(text_value($body['username'] ?? '', 40));
             $password = (string)($body['password'] ?? '');
+            // The studio has one admin account, so all submitted usernames share one bucket per IP.
+            $retryAfter = login_attempt_retry_after($pdo, 'admin', 'admin');
+            if ($retryAfter !== null) {
+                send_json(429, ['error' => 'Too many sign-in attempts. Please wait before trying again.'], ['Retry-After' => (string)$retryAfter]);
+            }
             $accepted = valid_admin_identity($admin)
                 && hash_equals((string)$admin['username'], $username)
                 && password_length($password) <= 128
@@ -682,6 +764,7 @@ function run_api(): never
             if (!$accepted) {
                 send_json(401, ['error' => 'Admin identity or password did not match.']);
             }
+            clear_login_attempts($pdo, 'admin', 'admin');
             create_role_session('admin', null, (int)$admin['session_version']);
             $signedInAt = now_iso();
             $emailSent = event_emails([
