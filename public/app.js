@@ -128,7 +128,13 @@ function drawProjects() {
   if (!visible.length) {
     const empty = document.createElement('div');
     empty.className = 'empty-projects';
-    empty.textContent = 'We’re gathering the next chapter of our work. Check back soon, or tell us what you have in mind.';
+    const message = document.createElement('p');
+    message.textContent = 'We’re gathering the next chapter of our work. Your idea could be the next one we share.';
+    const link = document.createElement('a');
+    link.className = 'empty-projects-link';
+    link.href = '#service-discovery';
+    link.textContent = 'Choose a starting point ↗';
+    empty.append(message, link);
     grid.replaceChildren(empty);
     return;
   }
@@ -176,6 +182,134 @@ const authDialog = document.querySelector('#client-auth-dialog');
 const authFormPanel = document.querySelector('#auth-form-panel');
 const clientAccountPanel = document.querySelector('#client-account-panel');
 let clientUser = null;
+
+const servicePathData = {
+  web: {
+    service: 'Web Development',
+    kicker: 'Build something people remember',
+    title: 'A website with a little more spark.',
+    description: 'From a sharp landing page to a full digital home, we shape the story, design the experience, and build it to feel effortless.',
+    tags: ['Strategy & design', 'Responsive build', 'Launch ready'],
+    prompt: 'I’m looking to build a website for…'
+  },
+  brand: {
+    service: 'Graphic Design',
+    kicker: 'Give your idea a point of view',
+    title: 'A visual identity people remember.',
+    description: 'Find a clear voice for your brand, then carry it across the details people see, use, and share.',
+    tags: ['Brand foundations', 'Visual identity', 'Campaign assets'],
+    prompt: 'I’d like help shaping the visual identity for…'
+  },
+  film: {
+    service: 'Video Editing',
+    kicker: 'Turn the story into motion',
+    title: 'Make your story move.',
+    description: 'Bring the right moments, motion, and sound together in a film that feels like you and keeps people watching.',
+    tags: ['Edit & pacing', 'Motion graphics', 'Sound finish'],
+    prompt: 'I have a story I’d like to tell through video…'
+  }
+};
+
+const serviceTabs = [...document.querySelectorAll('[data-service-path]')];
+const servicePanel = document.querySelector('#service-path-panel');
+const servicePathCta = document.querySelector('#service-path-cta');
+let activeServicePath = 'web';
+
+function selectServicePath(path, focusTab = false) {
+  const data = servicePathData[path];
+  if (!data) return;
+  activeServicePath = path;
+  serviceTabs.forEach(tab => {
+    const selected = tab.dataset.servicePath === path;
+    tab.classList.toggle('active', selected);
+    tab.setAttribute('aria-selected', String(selected));
+    tab.tabIndex = selected ? 0 : -1;
+    if (selected) servicePanel.setAttribute('aria-labelledby', tab.id);
+  });
+  document.querySelector('#service-path-kicker').textContent = data.kicker;
+  document.querySelector('#service-path-title').textContent = data.title;
+  document.querySelector('#service-path-description').textContent = data.description;
+  const tags = document.querySelector('#service-path-tags');
+  tags.replaceChildren(...data.tags.map(label => {
+    const tag = document.createElement('span');
+    tag.textContent = label;
+    return tag;
+  }));
+  if (focusTab) serviceTabs.find(tab => tab.dataset.servicePath === path)?.focus();
+}
+
+serviceTabs.forEach((tab, index) => {
+  tab.addEventListener('click', () => selectServicePath(tab.dataset.servicePath));
+  tab.addEventListener('keydown', event => {
+    const keySteps = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 };
+    if (event.key === 'Home') {
+      event.preventDefault();
+      selectServicePath(serviceTabs[0].dataset.servicePath, true);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      selectServicePath(serviceTabs[serviceTabs.length - 1].dataset.servicePath, true);
+    } else if (keySteps[event.key]) {
+      event.preventDefault();
+      const nextIndex = (index + keySteps[event.key] + serviceTabs.length) % serviceTabs.length;
+      selectServicePath(serviceTabs[nextIndex].dataset.servicePath, true);
+    }
+  });
+});
+
+servicePathCta.addEventListener('click', () => {
+  const path = servicePathData[activeServicePath];
+  inquiryForm.elements.service.value = path.service;
+  if (!inquiryForm.elements.details.value.trim()) {
+    inquiryForm.elements.details.value = path.prompt;
+    inquiryForm.elements.details.setSelectionRange(path.prompt.length, path.prompt.length);
+  }
+  document.querySelector('#contact').scrollIntoView({
+    behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    block: 'start'
+  });
+  window.setTimeout(() => inquiryForm.elements.details.focus({ preventScroll: true }), 450);
+});
+
+const heroVisual = document.querySelector('.hero-visual');
+const finePointer = window.matchMedia('(pointer: fine)').matches;
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+if (heroVisual && finePointer && !prefersReducedMotion) {
+  heroVisual.addEventListener('pointermove', event => {
+    const bounds = heroVisual.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+    const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+    heroVisual.style.setProperty('--ember-x', `${x * 13}px`);
+    heroVisual.style.setProperty('--ember-y', `${y * 13}px`);
+    heroVisual.style.setProperty('--orbit-x', `${x * -10}px`);
+    heroVisual.style.setProperty('--orbit-y', `${y * -8}px`);
+    heroVisual.style.setProperty('--orbit-two-x', `${x * 8}px`);
+    heroVisual.style.setProperty('--orbit-two-y', `${y * 11}px`);
+    heroVisual.style.setProperty('--note-x', `${x * -5}px`);
+    heroVisual.style.setProperty('--note-y', `${y * -5}px`);
+    heroVisual.style.setProperty('--glow-x', `${x * 12}px`);
+    heroVisual.style.setProperty('--glow-y', `${y * 10}px`);
+  });
+  heroVisual.addEventListener('pointerleave', () => {
+    ['--ember-x', '--ember-y', '--orbit-x', '--orbit-y', '--orbit-two-x', '--orbit-two-y', '--note-x', '--note-y', '--glow-x', '--glow-y']
+      .forEach(property => heroVisual.style.removeProperty(property));
+  });
+}
+
+if ('IntersectionObserver' in window && !prefersReducedMotion) {
+  const revealTargets = document.querySelectorAll('.section-heading, .service-card, .service-discovery, .studio-art, .studio-copy, .contact-copy, .inquiry-form');
+  const revealObserver = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      entry.target.classList.add('is-revealed');
+      revealObserver.unobserve(entry.target);
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -35px 0px' });
+  revealTargets.forEach((target, index) => {
+    target.classList.add('reveal-ready');
+    target.style.transitionDelay = `${Math.min(index % 4, 3) * 65}ms`;
+    revealObserver.observe(target);
+  });
+}
 
 function setClientAccount(user) {
   clientUser = user || null;
